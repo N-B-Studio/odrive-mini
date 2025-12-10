@@ -1,0 +1,1157 @@
+<html><head><link rel="stylesheet" type="text/css" href="http://kugeek.cn/usr/themes/handsome/assets/libs/vditor/dist/index.css"/>
+<script src="http://kugeek.cn/usr/themes/handsome/assets/libs/vditor/dist/js/i18n/zh_CN.js"></script>
+<script src="http://kugeek.cn/usr/themes/handsome/assets/libs/vditor/dist/method.min.js"></script></head>
+<body><div class="vditor-reset" id="preview"><h1>Mini_ODrive CAN协议</h1>
+<ul>
+<li>ODrive CAN Simple 协议使用标准的 11 位消息标识符（ID）。</li>
+<li><img src="http://kugeek.cn/usr/uploads/2024/10/1340916871.png" alt="CAN ID 组成" />
+<ul>
+<li><strong>node_id：</strong> 用户为ODrive设置的节点 ID。</li>
+<li><strong>cmd_id：</strong> 命令 ID，用于标识消息类型。所有可用命令都列在下文中。</li>
+</ul>
+</li>
+</ul>
+<pre><code>node_id = 0 # 必须与上位机设置的CAN_ID相同
+cmd_id = 0x01 # 命令ID，下文中有 
+message_id = (node_id &lt;&lt; 5 | cmd_id)   //最终需要发送的ID
+</code></pre>
+<ul>
+<li>前缀为 <code>Set_</code> 的消息 是主机可以发送到 ODrive 的消息。</li>
+<li>前缀为 <code>Get_</code>的消息是 ODrive 可以发送到主机的消息。这些消息可以作为can心跳 启用，也可以由 master 主动请求。如用户需要主动请求消息，主设备发送消息时需要设置 RTR 位的消息（远程帧），ODrive 使用相同的 ID 和相应的有效负载进行响应。</li>
+<li>所有值都以 little endian （又名 Intel 格式，又名最低有效字节在前） 编码，小端序模式。</li>
+<li>浮点数使用标准 IEEE 754 浮点格式进行编码。</li>
+</ul>
+<h2>CAN报文</h2>
+<table>
+<thead>
+<tr>
+<th>CMD ID</th>
+<th>消息名称</th>
+<th>方向</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0x000</td>
+<td>Get_Version</td>
+<td>ODrive → Host</td>
+<td>Protocol_Version<br/>Hw_Version_Major<br/>Hw_Version_Minor<br/>Hw_Version_Variant<br/>Fw_Version_Major<br/>Fw_Version_Minor<br/>Fw_Version_Revision<br/>Fw_Version_Unreleased</td>
+</tr>
+<tr>
+<td>0x001</td>
+<td>Heartbeat</td>
+<td>ODrive → Host</td>
+<td>Axis_Error<br/>Axis_State<br/>System_Error<br/>Traj_Down_Flags</td>
+</tr>
+<tr>
+<td>0x002</td>
+<td>Estop</td>
+<td>Host → ODrive</td>
+<td></td>
+</tr>
+<tr>
+<td>0x003</td>
+<td>Get_Error</td>
+<td>ODrive → Host</td>
+<td>Axis.Error_</td>
+</tr>
+<tr>
+<td>0x004</td>
+<td>RxSdo</td>
+<td>Host → ODrive</td>
+<td>Opcode<br/>Endpoint_ID<br/>Reserved<br/>Value</td>
+</tr>
+<tr>
+<td>0x005</td>
+<td>TxSdo</td>
+<td>ODrive → Host</td>
+<td>Reserved0<br/>Endpoint_ID<br/>Reserved1<br/>Value</td>
+</tr>
+<tr>
+<td>0x006</td>
+<td>Set_Node_ID</td>
+<td>Host → ODrive</td>
+<td>Node_ID</td>
+</tr>
+<tr>
+<td>0x007</td>
+<td>Set_Axis_State</td>
+<td>Host → ODrive</td>
+<td>Axis_Requested_State</td>
+</tr>
+<tr>
+<td>0x009</td>
+<td>Get_Encoder_Estimates</td>
+<td>ODrive → Host</td>
+<td>Pos_Estimate<br/>Vel_Estimate</td>
+</tr>
+<tr>
+<td>0x00b</td>
+<td>Set_Controller_Mode</td>
+<td>Host → ODrive</td>
+<td>Control_Mode<br/>Input_Mode</td>
+</tr>
+<tr>
+<td>0x00c</td>
+<td>Set_Input_Pos</td>
+<td>Host → ODrive</td>
+<td>Input_Pos<br/>Vel_FF<br/>Torque_FF</td>
+</tr>
+<tr>
+<td>0x00d</td>
+<td>Set_Input_Vel</td>
+<td>Host → ODrive</td>
+<td>Input_Vel<br/>Input_Torque_FF</td>
+</tr>
+<tr>
+<td>0x00e</td>
+<td>Set_Input_Torque</td>
+<td>Host → ODrive</td>
+<td>Input_Torque</td>
+</tr>
+<tr>
+<td>0x00f</td>
+<td>Set_Limits</td>
+<td>Host → ODrive</td>
+<td>Velocity_Limit<br/>Current_Limit</td>
+</tr>
+<tr>
+<td>0x011</td>
+<td>Set_Traj_Vel_Limit</td>
+<td>Host → ODrive</td>
+<td>Traj_Vel_Limit</td>
+</tr>
+<tr>
+<td>0x012</td>
+<td>Set_Traj_Accel_Limits</td>
+<td>Host → ODrive</td>
+<td>Traj_Accel_Limit<br/>Traj_Decel_Limit</td>
+</tr>
+<tr>
+<td>0x013</td>
+<td>Set_Traj_Inertia</td>
+<td>Host → ODrive</td>
+<td>Traj_Inertia</td>
+</tr>
+<tr>
+<td>0x014</td>
+<td>Get_Iq</td>
+<td>ODrive → Host</td>
+<td>Iq_Setpoint<br/>Iq_Measured</td>
+</tr>
+<tr>
+<td>0x015</td>
+<td>Get_Temperature</td>
+<td>ODrive → Host</td>
+<td>FET_Temperature<br/>Motor_Temperature</td>
+</tr>
+<tr>
+<td>0x016</td>
+<td>Reboot</td>
+<td>Host → ODrive</td>
+<td>Action</td>
+</tr>
+<tr>
+<td>0x017</td>
+<td>Get_Bus_Voltage_Current</td>
+<td>ODrive → Host</td>
+<td>Bus_Voltage<br/>Bus_Current</td>
+</tr>
+<tr>
+<td>0x018</td>
+<td>Clear_Errors</td>
+<td>Host → ODrive</td>
+<td>Identify</td>
+</tr>
+<tr>
+<td>0x019</td>
+<td>Set_Absolute_Position</td>
+<td>Host → ODrive</td>
+<td>Position</td>
+</tr>
+<tr>
+<td>0x01a</td>
+<td>Set_Pos_Gain</td>
+<td>Host → ODrive</td>
+<td>Pos_Gain</td>
+</tr>
+<tr>
+<td>0x01b</td>
+<td>Set_Vel_Gains</td>
+<td>Host → ODrive</td>
+<td>Vel_Gain<br/>Vel_Integrator_Gain</td>
+</tr>
+<tr>
+<td>0x01c</td>
+<td>Get_Torques</td>
+<td>ODrive → Host</td>
+<td>Torque_Target<br/>Torque_Estimate</td>
+</tr>
+<tr>
+<td>0x01d</td>
+<td>Get_Powers</td>
+<td>ODrive → Host</td>
+<td>Electrical_Power<br/>Mechanical_Power</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2>CAN 心跳消息</h2>
+<p>可以将 ODrive 配置为在没有请求的情况下定期发送一些消息。这是通过在上位机中设置所需的发送间隔来完成的。<br />
+设置单位为 <code>ms</code>，设置为0则表示禁用心跳。</p>
+<table>
+<thead>
+<tr>
+<th>消息</th>
+<th>配置 (.axis.config.can.[...])</th>
+<th>默认值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Heartbeat</td>
+<td><code>heartbeat_msg_rate_ms</code></td>
+<td>100 ms</td>
+</tr>
+<tr>
+<td>Get_Encoder_Estimates</td>
+<td><code>encoder_msg_rate_ms</code></td>
+<td>10 ms</td>
+</tr>
+<tr>
+<td>Get_Iq</td>
+<td><code>iq_msg_rate_ms</code></td>
+<td>关闭</td>
+</tr>
+<tr>
+<td>Get_Error</td>
+<td><code>error_msg_rate_ms</code></td>
+<td>关闭</td>
+</tr>
+<tr>
+<td>Get_Temperature</td>
+<td><code>temperature_msg_rate_ms</code></td>
+<td>关闭</td>
+</tr>
+<tr>
+<td>Get_Bus_Voltage_Current</td>
+<td><code>bus_voltage_msg_rate_ms</code></td>
+<td>关闭</td>
+</tr>
+<tr>
+<td>Get_Torques</td>
+<td><code>torques_msg_rate_ms</code></td>
+<td>关闭</td>
+</tr>
+</tbody>
+</table>
+<h2>看门狗</h2>
+<p>ODrive 的看门狗定时器可用作安全功能，在 CAN 通信中断时释放电机。<br />
+看门狗会通过每条 <code>Set_Input_Pos</code>、<code>Set_Input_Vel</code>和 <code>Set_Input_Torque</code>消息以及通过 <code>Set_Axis_State</code>进入闭环模式时重置。</p>
+<h1>消息</h1>
+<h2>Get_Version</h2>
+<ul>
+<li>命令：0x00</li>
+<li>方向：ODrive → Host</li>
+<li>帧类型：远程帧</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Protocol_Version</td>
+<td>uint8</td>
+<td>恒定为1</td>
+</tr>
+<tr>
+<td align="center">1</td>
+<td>Hw_Version_Major</td>
+<td>uint8</td>
+<td>硬件版本信息</td>
+</tr>
+<tr>
+<td align="center">2</td>
+<td>Hw_Version_Minor</td>
+<td>uint8</td>
+<td>硬件版本信息</td>
+</tr>
+<tr>
+<td align="center">3</td>
+<td>Hw_Version_Variant</td>
+<td>uint8</td>
+<td>硬件版本信息</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td>Fw_Version_Major</td>
+<td>uint8</td>
+<td>软件版本信息</td>
+</tr>
+<tr>
+<td align="center">5</td>
+<td>Fw_Version_Minor</td>
+<td>uint8</td>
+<td>软件版本信息</td>
+</tr>
+<tr>
+<td align="center">6</td>
+<td>Fw_Version_Revision</td>
+<td>uint8</td>
+<td>软件版本信息</td>
+</tr>
+<tr>
+<td align="center">7</td>
+<td>Fw_Version_Unreleased</td>
+<td>uint8</td>
+<td>恒定为1</td>
+</tr>
+</tbody>
+</table>
+<h2>Heartbeat</h2>
+<ul>
+<li>命令：0x01</li>
+<li>方向：ODrive → Host</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Axis_Error</td>
+<td>uint32</td>
+<td>Axis 错误信息</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td>Axis_State</td>
+<td>uint8</td>
+<td>系统状态</td>
+</tr>
+<tr>
+<td align="center">6</td>
+<td>System_Error</td>
+<td>uint8</td>
+<td>系统错误</td>
+</tr>
+<tr>
+<td align="center">7</td>
+<td>Trajectory_Done_Flag</td>
+<td>uint8</td>
+<td>梯形补偿标志</td>
+</tr>
+</tbody>
+</table>
+<p>Axis_State 枚举如下：</p>
+<pre><code>enum AxisState {
+            AXIS_STATE_UNDEFINED = 0,
+            AXIS_STATE_IDLE = 1,  //释放电机
+            AXIS_STATE_STARTUP_SEQUENCE = 2,
+            AXIS_STATE_FULL_CALIBRATION_SEQUENCE = 3,  //完整参数校准
+            AXIS_STATE_MOTOR_CALIBRATION = 4,  //电机校准
+            AXIS_STATE_ENCODER_INDEX_SEARCH = 6,
+            AXIS_STATE_ENCODER_OFFSET_CALIBRATION = 7,  //编码器校准
+            AXIS_STATE_CLOSED_LOOP_CONTROL = 8,  //闭环模式
+            AXIS_STATE_LOCKIN_SPIN = 9,
+            AXIS_STATE_ENCODER_DIR_FIND = 10,
+            AXIS_STATE_MOTOR_CALIBRATION_FLUX = 11,
+        };
+</code></pre>
+<h2>Estop</h2>
+<ul>
+<li>命令：0x02</li>
+<li>方向：ODrive → Host</li>
+<li>载荷部分为空</li>
+<li>发送后直接停机</li>
+</ul>
+<h2>Get_Error</h2>
+<ul>
+<li>命令：0x03</li>
+<li>方向：ODrive → Host</li>
+<li>帧类型：远程帧</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Axis_Errors</td>
+<td>uint32</td>
+<td>axis的错误代码</td>
+</tr>
+</tbody>
+</table>
+<h2>RxSdo</h2>
+<ul>
+<li>命令：0x04</li>
+<li>方向：Host → ODrive</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Opcode</td>
+<td>uint8</td>
+<td>0: 读参数, 1: 写参数</td>
+</tr>
+<tr>
+<td align="center">1</td>
+<td>Endpoint_ID</td>
+<td>uint16</td>
+<td>从<code>flat_endpoints.json</code>读取的Endpoint_ID</td>
+</tr>
+<tr>
+<td align="center">3</td>
+<td>Reserved</td>
+<td>uint8</td>
+<td>预留，随意</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td>Value</td>
+<td>uint32</td>
+<td>转换为uint32的值</td>
+</tr>
+</tbody>
+</table>
+<p>由主机发送用于对ODrive读取或写入任意参数。</p>
+<h2>TxSdo</h2>
+<ul>
+<li>命令：0x05</li>
+<li>方向：ODrive → Host</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Reserved0</td>
+<td>uint8</td>
+<td>预留</td>
+</tr>
+<tr>
+<td align="center">1</td>
+<td>Endpoint_ID</td>
+<td>uint16</td>
+<td>从<code>flat_endpoints.json</code>读取的Endpoint_ID</td>
+</tr>
+<tr>
+<td align="center">3</td>
+<td>Reserved1</td>
+<td>uint8</td>
+<td>硬件版本信息</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td>Value</td>
+<td>uint32</td>
+<td>读取到的值</td>
+</tr>
+</tbody>
+</table>
+<p>由 ODrive 发送，以响应 Opcode=READ 的 RxSdo。</p>
+<h2>Set_Node_ID</h2>
+<ul>
+<li>命令：0x06</li>
+<li>方向：Host → ODrive</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>CAN_ID</td>
+<td>uint32</td>
+<td>设置CAN节点ID</td>
+</tr>
+</tbody>
+</table>
+<h2>Set_Axis_State</h2>
+<ul>
+<li>命令：0x07</li>
+<li>方向：Host → ODrive</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Axis_Requested_State</td>
+<td>uint32</td>
+<td>设置闭环状态</td>
+</tr>
+</tbody>
+</table>
+<p>Axis_State枚举如下：</p>
+<pre><code>enum AxisState {
+            AXIS_STATE_UNDEFINED = 0,
+            AXIS_STATE_IDLE = 1,  //释放电机
+            AXIS_STATE_STARTUP_SEQUENCE = 2,
+            AXIS_STATE_FULL_CALIBRATION_SEQUENCE = 3,  //完整参数校准
+            AXIS_STATE_MOTOR_CALIBRATION = 4,  //电机校准
+            AXIS_STATE_ENCODER_INDEX_SEARCH = 6,
+            AXIS_STATE_ENCODER_OFFSET_CALIBRATION = 7,  //编码器校准
+            AXIS_STATE_CLOSED_LOOP_CONTROL = 8,  //闭环模式
+            AXIS_STATE_LOCKIN_SPIN = 9,
+            AXIS_STATE_ENCODER_DIR_FIND = 10,
+            AXIS_STATE_MOTOR_CALIBRATION_FLUX = 11,
+        };
+</code></pre>
+<h2>Get_Encoder_Estimates</h2>
+<ul>
+<li>命令：0x09</li>
+<li>方向：ODrive → Host</li>
+<li>帧类型：远程帧</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>单位</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Pos_Estimate</td>
+<td>float32</td>
+<td>转</td>
+<td>电机当前位置</td>
+</tr>
+<tr>
+<td align="center">1</td>
+<td>Vel_Estimate</td>
+<td>float32</td>
+<td>转/s</td>
+<td>电机当前速度</td>
+</tr>
+</tbody>
+</table>
+<p>此消息默认直接从CAN心跳发送</p>
+<h2>Set_Controller_Mode</h2>
+<ul>
+<li>命令：0x0b</li>
+<li>方向：Host → ODrive</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Control_Mode</td>
+<td>uint32</td>
+<td>控制模式</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td>Input_Mode</td>
+<td>uint32</td>
+<td>输入模式</td>
+</tr>
+</tbody>
+</table>
+<p>Control_Mode枚举如下：</p>
+<pre><code>enum ControlMode {
+            CONTROL_MODE_VOLTAG00E_CONTROL = 0, 
+            CONTROL_MODE_TORQUE_CONTROL = 1,  //力矩控制
+            CONTROL_MODE_VELOCITY_CONTROL = 2,   //速度控制
+            CONTROL_MODE_POSITION_CONTROL = 3,   //位置控制
+        };
+</code></pre>
+<p>Input_Mode枚举如下：</p>
+<pre><code>enum InputMode {
+            INPUT_MODE_INACTIVE = 0,   
+            INPUT_MODE_PASSTHROUGH = 1,   //直接输入
+            INPUT_MODE_VEL_RAMP = 2,   //速度斜率
+            INPUT_MODE_POS_FILTER = 3,    //位置滤波
+            INPUT_MODE_TRAP_TRAJ = 5,   //梯形位置
+            INPUT_MODE_TORQUE_RAMP = 6,   //力矩斜率
+            INPUT_MODE_TUNING = 7,
+        };
+</code></pre>
+<h2>Set_Input_Pos</h2>
+<ul>
+<li>命令：0x0c</li>
+<li>方向：Host → ODrive</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>单位</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Input_Pos</td>
+<td>float32</td>
+<td>转</td>
+<td>目标位置</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td>Vel_FF</td>
+<td>uint16</td>
+<td>0.001 转/s</td>
+<td>速度前馈，默认为0</td>
+</tr>
+<tr>
+<td align="center">6</td>
+<td>Torque_FF</td>
+<td>uint16</td>
+<td>0.001 Nm</td>
+<td>力矩前馈，默认为0</td>
+</tr>
+</tbody>
+</table>
+<p>注意：前馈不等于速度、力矩限制，两个概念，不懂前馈就别管！！！</p>
+<h2>Set_Input_Vel</h2>
+<ul>
+<li>命令：0x0d</li>
+<li>方向：Host → ODrive</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>单位</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Input_Vel</td>
+<td>float32</td>
+<td>转/s</td>
+<td>目标速度</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td>Input_Torque_FF</td>
+<td>float32</td>
+<td>Nm</td>
+<td>力矩前馈</td>
+</tr>
+</tbody>
+</table>
+<h2>Set_Input_Torque</h2>
+<ul>
+<li>命令：0x0e</li>
+<li>方向：Host → ODrive</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>单位</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Input_Torque</td>
+<td>float32</td>
+<td>Nm</td>
+<td>目标力矩</td>
+</tr>
+</tbody>
+</table>
+<h2>Set_Limits</h2>
+<ul>
+<li>命令：0x0f</li>
+<li>方向：Host → ODrive</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>单位</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Velocity_Limit</td>
+<td>float32</td>
+<td>转/s</td>
+<td>速度限制</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td>Current_Limit</td>
+<td>float32</td>
+<td>A</td>
+<td>电流限制</td>
+</tr>
+</tbody>
+</table>
+<h2>Set_Traj_Vel_Limit</h2>
+<ul>
+<li>命令：0x11</li>
+<li>方向：Host → ODrive</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>单位</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Traj_Vel_Limit</td>
+<td>float32</td>
+<td>转/s</td>
+<td>梯形位置下的恒定速度</td>
+</tr>
+</tbody>
+</table>
+<h2>Set_Traj_Accel_Limits</h2>
+<ul>
+<li>命令：0x12</li>
+<li>方向：Host → ODrive</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>单位</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Traj_Accel_Limit</td>
+<td>float32</td>
+<td>转/s^2</td>
+<td>梯形位置下的加速度</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td>Traj_Decel_Limit</td>
+<td>float32</td>
+<td>转/s^2</td>
+<td>梯形位置下的减速度</td>
+</tr>
+</tbody>
+</table>
+<h2>Set_Traj_Inertia</h2>
+<ul>
+<li>命令：0x13</li>
+<li>方向：Host → ODrive</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>单位</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Traj_Inertia</td>
+<td>float32</td>
+<td>Nm/(转/s^2)</td>
+<td>前馈系数</td>
+</tr>
+</tbody>
+</table>
+<h2>Get_Iq</h2>
+<ul>
+<li>命令：0x14</li>
+<li>方向：ODrive → Host</li>
+<li>帧类型：远程帧</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th align="center">单位</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Iq_Setpoint</td>
+<td>float32</td>
+<td align="center">A</td>
+<td>目标Iq电流</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td>Iq_Measured</td>
+<td>float32</td>
+<td align="center">A</td>
+<td>实际Iq电流</td>
+</tr>
+</tbody>
+</table>
+<h2>Get_Temperature</h2>
+<ul>
+<li>命令：0x15</li>
+<li>方向：ODrive → Host</li>
+<li>帧类型：远程帧</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>单位</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>FET_Temperature</td>
+<td>float32</td>
+<td>摄氏度</td>
+<td>PCB温度</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td>Motor_Temperature</td>
+<td>float32</td>
+<td>摄氏度</td>
+<td>电机温度</td>
+</tr>
+</tbody>
+</table>
+<h2>Reboot</h2>
+<ul>
+<li>命令：0x16</li>
+<li>方向：ODrive → Host</li>
+<li>帧类型：远程帧</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Action</td>
+<td>uint8</td>
+<td>0:<code>正常重启</code><br/>1: <code>保存配置</code><br/>2: <code>恢复出厂设置</code><br/>3: <code>进入DFU模式</code></td>
+</tr>
+</tbody>
+</table>
+<h2>Get_Bus_Voltage_Current</h2>
+<ul>
+<li>命令：0x17</li>
+<li>方向：ODrive → Host</li>
+<li>帧类型：远程帧</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th align="center">单位</th>
+<th align="center">描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Bus_Voltage</td>
+<td>float32</td>
+<td align="center">V</td>
+<td align="center">母线电压</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td>Bus_Current</td>
+<td>float32</td>
+<td align="center">A</td>
+<td align="center">母线电流</td>
+</tr>
+</tbody>
+</table>
+<h2>Clear_Errors</h2>
+<ul>
+<li>命令：0x18</li>
+<li>方向：Host → ODrive</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th align="center">名称</th>
+<th align="center">类型</th>
+<th align="center">描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td align="center">空</td>
+<td align="center">空</td>
+<td align="center">空</td>
+</tr>
+</tbody>
+</table>
+<h2>Set_Absolute_Position</h2>
+<ul>
+<li>命令：0x19</li>
+<li>方向：Host → ODrive</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th align="center">单位</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Position</td>
+<td>float32</td>
+<td align="center">转</td>
+<td>要设置的绝对目标位置</td>
+</tr>
+</tbody>
+</table>
+<h2>Set_Pos_Gain</h2>
+<ul>
+<li>命令：0x1a</li>
+<li>方向：Host → ODrive</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Pos_Gain</td>
+<td>float32</td>
+<td>位置环增益P</td>
+</tr>
+</tbody>
+</table>
+<h2>Set_Vel_Gains</h2>
+<ul>
+<li>命令：0x1b</li>
+<li>方向：Host → ODrive</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Vel_Gain</td>
+<td>float32</td>
+<td>速度环增益P</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td>Vel_Integrator_Gain</td>
+<td>float32</td>
+<td>速度环积分I</td>
+</tr>
+</tbody>
+</table>
+<h2>Get_Torque</h2>
+<ul>
+<li>命令：0x1c</li>
+<li>方向：ODrive → Host</li>
+<li>帧类型：远程帧</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th align="center">Unit</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Torque_Target</td>
+<td>float32</td>
+<td align="center">Nm</td>
+<td>力矩目标值</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td>Torque_Estimate</td>
+<td>float32</td>
+<td align="center">Nm</td>
+<td>力矩估计值</td>
+</tr>
+</tbody>
+</table>
+<h2>Get_Powers</h2>
+<ul>
+<li>命令：0x1d</li>
+<li>方向：ODrive → Host</li>
+<li>帧类型：远程帧</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">起始字节</th>
+<th>名称</th>
+<th>类型</th>
+<th align="center">单位</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">0</td>
+<td>Electrical_Power</td>
+<td>float32</td>
+<td align="center">W</td>
+<td>电机机械功率（扭矩*转速）</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td>Mechanical_Power</td>
+<td>float32</td>
+<td align="center">W</td>
+<td>电机电功率（调制 * 电压 * 电流）</td>
+</tr>
+</tbody>
+</table>
+</div>
+<script>
+    const previewElement = document.getElementById('preview')
+    Vditor.setContentTheme('light', 'https://cdn.jsdelivr.net/npm/vditor@3.8.14/dist/css/content-theme');
+    Vditor.codeRender(previewElement);
+    Vditor.highlightRender({"enable":true,"lineNumber":true,"style":"monokai"}, previewElement, 'http://kugeek.cn/usr/themes/handsome/assets/libs/vditor');
+    Vditor.mathRender(previewElement, {
+        cdn: 'http://kugeek.cn/usr/themes/handsome/assets/libs/vditor',
+        math: {"engine":"MathJax","inlineDigit":true,"macros":{"bf":"{\\boldsymbol f}","bu":"{\\boldsymbol u}","bv":"{\\boldsymbol v}","bw":"{\\boldsymbol w}"}},
+    });
+    Vditor.mermaidRender(previewElement, 'http://kugeek.cn/usr/themes/handsome/assets/libs/vditor', 'classic');
+    Vditor.flowchartRender(previewElement, 'http://kugeek.cn/usr/themes/handsome/assets/libs/vditor');
+    Vditor.graphvizRender(previewElement, 'http://kugeek.cn/usr/themes/handsome/assets/libs/vditor');
+    Vditor.chartRender(previewElement, 'http://kugeek.cn/usr/themes/handsome/assets/libs/vditor', 'classic');
+    Vditor.mindmapRender(previewElement, 'http://kugeek.cn/usr/themes/handsome/assets/libs/vditor', 'classic');
+    Vditor.abcRender(previewElement, 'http://kugeek.cn/usr/themes/handsome/assets/libs/vditor');
+    Vditor.mediaRender(previewElement);
+    Vditor.speechRender(previewElement);
+</script>
+<script src="http://kugeek.cn/usr/themes/handsome/assets/libs/vditor/dist/js/icons/material.js"></script></body></html>
